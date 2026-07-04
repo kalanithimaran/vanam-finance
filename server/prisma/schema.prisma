@@ -1,0 +1,104 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model Household {
+  id              Int               @id @default(autoincrement())
+  name            String
+  phone           String            @unique
+  pin_hash        String
+  created_at      DateTime          @default(now())
+  income_sources  IncomeSource[]
+  entries         Entry[]
+  investment_plan InvestmentPlan[]
+  loans           Loan[]
+  crop_plans      CropPlan[]
+  financial_goals FinancialGoal[]
+}
+
+model IncomeSource {
+  id              Int       @id @default(autoincrement())
+  household_id    Int
+  household       Household @relation(fields: [household_id], references: [id])
+  key             String
+  display_name_ta String
+  color           String
+  icon            String
+  entries         Entry[]
+}
+
+model Entry {
+  id           Int          @id @default(autoincrement())
+  household_id Int
+  household    Household    @relation(fields: [household_id], references: [id])
+  source_id    Int
+  source       IncomeSource @relation(fields: [source_id], references: [id])
+  type         String       // "income" or "expense"
+  amount       Decimal      @db.Decimal(10, 2)
+  entry_date   DateTime
+  note         String?
+  crop_plan_id Int?
+  crop_plan    CropPlan?    @relation(fields: [crop_plan_id], references: [id])
+  created_by   Int?         // could be user id if multiple users exist later
+  created_at   DateTime     @default(now())
+}
+
+model InvestmentPlan {
+  id               Int       @id @default(autoincrement())
+  household_id     Int
+  household        Household @relation(fields: [household_id], references: [id])
+  category_name_ta String
+  percentage       Decimal   @db.Decimal(5, 2)
+  color            String
+}
+
+model Loan {
+  id               Int             @id @default(autoincrement())
+  household_id     Int
+  household        Household       @relation(fields: [household_id], references: [id])
+  type             String          // 'taken' (வாங்கியது) or 'given' (கொடுத்தது)
+  person_name      String
+  amount           Decimal         @db.Decimal(10, 2)
+  interest_rate    Decimal?        @db.Decimal(5, 2)
+  start_date       DateTime
+  status           String          @default("active") // 'active' or 'closed'
+  created_at       DateTime        @default(now())
+  repayments       LoanRepayment[]
+}
+
+model LoanRepayment {
+  id           Int      @id @default(autoincrement())
+  loan_id      Int
+  loan         Loan     @relation(fields: [loan_id], references: [id], onDelete: Cascade)
+  amount       Decimal  @db.Decimal(10, 2)
+  date         DateTime
+  note         String?
+  created_at   DateTime @default(now())
+}
+
+model CropPlan {
+  id           Int       @id @default(autoincrement())
+  household_id Int
+  household    Household @relation(fields: [household_id], references: [id])
+  name         String
+  start_date   DateTime  @default(now())
+  status       String    @default("active") // active or completed
+  created_at   DateTime  @default(now())
+  entries      Entry[]
+}
+
+model FinancialGoal {
+  id           Int       @id @default(autoincrement())
+  household_id Int
+  household    Household @relation(fields: [household_id], references: [id])
+  name         String
+  amount       Decimal   @db.Decimal(12, 2)
+  target_date  DateTime
+  status       String    @default("active") // active or achieved
+  created_at   DateTime  @default(now())
+}
