@@ -18,7 +18,8 @@ router.post('/register', async (req, res) => {
     // Add default sources and plans...
     res.json({ message: 'Registered successfully', householdId: household.id });
   } catch (error) {
-    res.status(500).json({ error: 'Internal server error' });
+    console.error('Registration error:', error);
+    res.status(500).json({ error: 'Internal server error', details: error.message });
   }
 });
 
@@ -34,10 +35,18 @@ router.post('/login', async (req, res) => {
       return res.status(400).json({ error: 'Invalid phone or PIN' });
     }
     const token = jwt.sign({ householdId: household.id }, process.env.JWT_SECRET || 'your_jwt_secret_key');
-    res.cookie('token', token, { httpOnly: true, secure: process.env.NODE_ENV === 'production' });
+    
+    const isProd = process.env.NODE_ENV === 'production';
+    res.cookie('token', token, { 
+      httpOnly: true, 
+      secure: isProd,
+      sameSite: isProd ? 'none' : 'lax'
+    });
+    
     res.json({ token, household: { id: household.id, name: household.name } });
   } catch (error) {
-    res.status(500).json({ error: 'Internal server error' });
+    console.error('Login error:', error);
+    res.status(500).json({ error: 'Internal server error', details: error.message });
   }
 });
 
