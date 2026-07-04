@@ -42,6 +42,11 @@ app.use('/api/loans', loansRoutes);
 app.use('/api/crop-plans', cropPlansRoutes);
 app.use('/api/targets', targetsRoutes);
 
+// Health check route
+app.get('/', (req, res) => {
+  res.send('Vanam API is running! 🚀');
+});
+
 io.on('connection', (socket) => {
   console.log('Client connected:', socket.id);
   
